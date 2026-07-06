@@ -3,7 +3,7 @@
 
 from std/rdstdin import readLineFromStdin
 from std/unicode import toLower
-from std/strutils import strip
+from std/strutils import strip, formatFloat, ffDecimal
 from std/os import sleep
 from std/random import rand, randomize
 
@@ -11,16 +11,15 @@ var
   NMC: float = 0      # Деньги пользователя
   steps: int = 0      # Сколько циклов прошёл пользователь
   NMC_all: float = 0  # Сколько всего заработал пользователь
-  cycle_end: float = 0
   
 let help = """
 help|h|?  - Помощь
 balance|b - Посмотреть свой баланс
 info|i    - Посмотреть полную информацию
-start|s   - Начать выполнение цикла"""
+start|s   - Начать выполнение цикла
+exit|e    - Выйти"""
 
 proc cycle(): float =
-  randomize()
   let all_steps: int = rand(10 .. 5000)
   for step in 1 .. all_steps:
     write(stdout, "\rЗагрузка... [" & $step & "/" & $all_steps & "]")
@@ -29,6 +28,7 @@ proc cycle(): float =
   echo ""
   return rand(0.1 .. 1.0)
 
+randomize()
 echo "NMC_Miner - MichiTheCat-RedStar (c) 2026\nВведите 'help' для помощи"
 while true:
   let input = readLineFromStdin("\n>>> ").strip().toLower()
@@ -36,24 +36,41 @@ while true:
   of "help", "h", "?":
     echo help
   of "balance", "b":
-    echo "Ваш баланс: ", NMC, " NMC"
+    echo "Ваш баланс: ", formatFloat(NMC, ffDecimal, 2), " NMC"
   of "info", "i":
     echo "Ваш баланс: ", NMC, " NMC\nЗаработано всго: ", NMC_all, " NMC\nВсего циклов: ", steps
     if (steps != 0) and (NMC_all != 0.0):
-      echo "Среднее количество заработка за цикл: ", NMC_all/float(steps)
+      echo "Среднее количество заработка за цикл: ", formatFloat(NMC_all/float(steps), ffDecimal, 2)
   of "start", "s":
     echo "Запущен рассчёт цикла:"
-    cycle_end = cycle()
+    let cycle_end = cycle()
     NMC += cycle_end
     NMC_all += cycle_end
     steps += 1
     echo "Счёт пополнен на ", cycle_end, " NMC"
+  of "exit", "e":
+    echo "Спасибо, что играли в NMC_Miner!"
+    break
   of "":
     discard
   else:
     echo "Неизвестная команда: \"", input, "\""
 
-#[
+#[ v1.0b
+  Немного багафиксов в этой версии, даже HotFix'ов скорее, учитывая как
+  быстро вышло обновление
+  А ещё вспомнил, что забыл уточнить, что я знаю об if-else, но просто
+  так забавно, что я только перешёл на Python3.14 с Python3.8 и у меня
+  наконец-то появились case, что я на радости решил использовать их в
+  Nim, да и в рамках кода это кажется удобнее... Хотя по идее Nim и так
+  в разы быстрее Python, так что я бы точно не терял скорость используя
+  обычный if-else...
+  
+  Блин, я избегал std/strformat, но мне надо высказаться, что это буква-
+  льно Python с f"строками, что убивает")
+]#
+
+#[ v1.0a
   Ну, сравнил я значит Nim с Python...
   Кто за мной следит, то знают, что я питонист, который продвигает Nim
   Однако до этого в Nim так открыто не лез...
