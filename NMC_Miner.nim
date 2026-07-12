@@ -1,4 +1,4 @@
-#		NMC_Miner // ☭
+#       NMC_Miner // ☭
 # MichiTheCat-RedStar (c) 2026
 
 from std/rdstdin import readLineFromStdin
@@ -8,13 +8,27 @@ from std/os import sleep, fileExists
 from std/random import rand, randomize
 import std/json
 
-const VERSION = "v1.1a"
+const VERSION = "v1.1b"
 
 var
   NMC: float = 0      # Деньги пользователя
   steps: int = 0      # Сколько циклов прошёл пользователь
   NMC_all: float = 0  # Сколько всего заработал пользователь
+
+type ShopObjects = enum # Товары в магазине
+  InitShop, MoreSpeed, Autosave, Autoload
+var Shop: array[ShopObjects, bool] = [false, false, false, false]
+
+#[ TODO: Шпаргалка для будущего
+  Ну я тут и накрутил для будущей обновы магазина... Так извернуться...
+  Теперь к объектам можно образаться как Shop[MoreSpeed] и прочее
   
+  Расшифровки:
+    InitShop - нужно купить сам магазин, чтобы получить к нему доступ
+    MoreSpeed - быстрее работает cycle за счёт сокращения rand в sleep
+    Autosave и Autoload понятны из названия
+]#
+
 let help = """
 help|h|?  - Помощь
 balance|b - Посмотреть свой баланс
@@ -30,7 +44,10 @@ proc save(): void =
 
 proc load(): JsonNode =
   if fileExists("save.json"):
-    return parseFile("save.json")
+    try:
+      return parseFile("save.json")
+    except JsonParsingError:
+      return %*{"NMC": 0, "steps": 0, "NMC_all": 0}
   else:
     return %*{"NMC": 0, "steps": 0, "NMC_all": 0}
 
@@ -46,7 +63,8 @@ proc cycle(): float =
 randomize()
 echo "NMC_Miner - MichiTheCat-RedStar (c) 2026 | Версия: ", VERSION, "\nВведите 'help' для помощи"
 while true:
-  let input = readLineFromStdin("\n>>> ").strip().toLower()
+  echo "" # Исправляет ошибку с Backspace для UTF-8
+  let input = readLineFromStdin(">>> ").strip().toLower()
   case input
   of "help", "h", "?":
     echo help
@@ -74,19 +92,16 @@ while true:
     NMC = data["NMC"].getFloat()
     steps = data["steps"].getInt()
     NMC_all = data["NMC_all"].getFloat()
-    if fileExists("save.json"):
-      echo "Успешно загружено!"
+    if NMC == 0 and steps == 0 and NMC_all == 0:
+      echo "Файл пустой или повреждён"
     else:
-      echo "Файл не найден и всё обнулено."
+      echo "Успешно загружено!"
   of "":
     discard
   else:
     echo "Неизвестная команда: \"", input, "\""
 
 #[ v1.1b
-  Если вы видите этот текст, то вы на версии v1.1a, а не v1.1b!!!
-  Этот текст написан на будущее, чтобы сразу показать свои мысли...
-  
   Сейчас перекомпилировал на C++ и собрал через cat в один файл...
   довольно прикольно и странно, код на 22 тысячи строк...
   Попробовал через бэкенд C и C++ компилировать и C компактнее
@@ -97,6 +112,26 @@ while true:
   который уже компилируется... Хмм
   
   Забейте, я узнал об AST, сейчас буду пилить HotFix...
+  
+  А ещё готовлю почву для добавления магазина и опять как с f-строками
+  нашёл то, что знакома с питона - std/tables - как в питоне словари)
+  
+  Окей смотрите:
+  Есть seq - это список, все типы внутри одинаковые, но список этот
+  может быть любого размера
+  Есть array - это похожий на C массив, тут на этапе компиляции должен
+  быть известен размер 
+  А есть кортежи - это те же, что и в питоне.. Казалось бы разницы с
+  array нет, но в nim можно их делать именованными, типа задавать: 
+  (name: "Bob", age: 11), что близко к словарям в питоне...
+  И вот я думаю как бы так изковырнуться, чтобы не использовать tables,
+  так как и так много встроенных библиотек уже импортировано, но при
+  этом чтобы как Тобби Фокс не писать # index's: 1 - Health, 2 - Mana
+  и на том подобии, чтобы знать какой индекс что значит)
+  
+  В общем я накрутил там ShopObjects, что сам в шоке...
+  
+  Теперь в коде нормально работает Backspace и обработка ошибок JSON
 ]#
 
 #[ v1.1a
